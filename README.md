@@ -26,7 +26,7 @@ This is the GPT implementation based on Karpathy's (2023) Let's Build GPT lectur
 
 # PPO_main.py
 
-This implements the PPO fine-tuning to eliminate U counts. Not that if you want to adjust the reward Threshold this needs to be done manually in `GenEnv.py`.
+This implements the PPO fine-tuning to eliminate U counts. Note that if you want to adjust the reward Threshold this needs to be done manually in `GenEnv.py`.
 
 You can run `PPO_main.py` in the terminal to train. This will be very slow unless you have access to a GPU, or you have significantly reduced the size of the GPT in `langmodel.py`.
 
