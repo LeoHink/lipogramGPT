@@ -20,7 +20,7 @@ In `train.py`, you can adjust hyperparameter settings. Including the `eval_inter
 
 # langmodel.py
 
-This is the GPT implementation based on Karpathy's (2023) Let's Build GPT lecture which can be accessed [Here}(https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqa1RFbVRYWUIwOXV1SG9ZVjFseldwdV9RMXhnd3xBQ3Jtc0ttSnJLcVpDVk55ZVl5bVVGQ0QwUFlyRmRkRk5ydkNQLUdQdGV2MEF0U0RvWkNoTWhBSUlIenQ5SlFfekF3SUtHeVVUemlqWjZnU0drZ0ZVdnk0Nkp3NXctM25vT1JxZm12Y3M1Qk53ekRGNkdwZFYxQQ&q=https%3A%2F%2Fgithub.com%2Fkarpathy%2Fng-video-lecture&v=kCc8FmEb1nY)
+This is the GPT implementation based on Karpathy's (2023) Let's Build GPT lecture which can be accessed [Here](https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqa1RFbVRYWUIwOXV1SG9ZVjFseldwdV9RMXhnd3xBQ3Jtc0ttSnJLcVpDVk55ZVl5bVVGQ0QwUFlyRmRkRk5ydkNQLUdQdGV2MEF0U0RvWkNoTWhBSUlIenQ5SlFfekF3SUtHeVVUemlqWjZnU0drZ0ZVdnk0Nkp3NXctM25vT1JxZm12Y3M1Qk53ekRGNkdwZFYxQQ&q=https%3A%2F%2Fgithub.com%2Fkarpathy%2Fng-video-lecture&v=kCc8FmEb1nY)
 
 - In the file you can adjust hyperparameter settings to cater to the compute available to you. If GPU is available the model will automatically run on the GPU.
 
