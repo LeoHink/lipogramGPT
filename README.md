@@ -34,6 +34,15 @@ You can run `PPO_main.py` in the terminal to train. This will be very slow unles
 
 Does what it says on the tin. Run this with the appropriate weight (might need to be changed in the file) to generate text with your model's weights. 
 
+# GenEnv.py
+
+This implements the environment used for PPO. 
+
+
+# ValueNetwork.py
+
+Implements the Critic for PPO to get state_value estimates. 
+
 # Sorry in Advance
 
 This is quite an ugly implementation to recreate this you will have to tweak the files a bit. Adjusting for example the `u_threshold` in GenEnv. If there are issues please reach out!
