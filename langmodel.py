@@ -1,3 +1,8 @@
+# --------------------
+# Taken from on Karpathy (2023): https://github.com/karpathy/ng-video-lecture
+# Minor adjustments to hyperparameter settings and seperated training loop into train.py
+# --------------------
+
 import torch 
 import torch.nn as nn
 from torch.nn import functional as F
@@ -16,31 +21,6 @@ n_layer = 4
 dropout = 0.2
 vocab_size = 65
 
-
-# data loading
-# def get_batch(split):
-#     # generate a small batch of data of inputs x and targets y
-#     data = train_data if split == 'train' else val_data
-#     ix = torch.randint(len(data) - block_size, (batch_size,))
-#     x = torch.stack([data[i:i+block_size] for i in ix])
-#     y = torch.stack([data[i+1:i+block_size+1] for i in ix])
-#     x, y = x.to(device), y.to(device)
-#     return x, y
-
-# @torch.no_grad()
-# def estimate_loss():
-#     out = {}
-#     model.eval()
-#     for split in ['train', 'val']:
-#         losses = torch.zeros(eval_iters)
-#         for k in range(eval_iters):
-#             X, Y = get_batch(split)
-#             logits, loss = model(X, Y)
-#             losses[k] = loss.item()
-#         out[split] = losses.mean()
-#     model.train()
-#     return out
-
 class Head(nn.Module):
     """ one head of self-attention """
 
@@ -57,12 +37,10 @@ class Head(nn.Module):
         B,T,C = x.shape
         k = self.key(x)   # (B,T,C)
         q = self.query(x) # (B,T,C)
-        # compute attention scores ("affinities")
         wei = q @ k.transpose(-2,-1) * C**-0.5 # (B, T, C) @ (B, C, T) -> (B, T, T)
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)
         wei = F.softmax(wei, dim=-1) # (B, T, T)
         wei = self.dropout(wei)
-        # perform the weighted aggregation of the values
         v = self.value(x) # (B,T,C)
         out = wei @ v # (B, T, T) @ (B, T, C) -> (B, T, C)
         return out
@@ -118,7 +96,6 @@ class LanguageModel(nn.Module):
 
     def __init__(self):
         super().__init__()
-        # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.blocks = nn.Sequential(*[Block(n_embd, n_head=n_head) for _ in range(n_layer)])
@@ -128,7 +105,6 @@ class LanguageModel(nn.Module):
     def forward(self, idx, targets=None):
         B, T = idx.shape
 
-        # idx and targets are both (B,T) tensor of integers
         tok_emb = self.token_embedding_table(idx) # (B,T,C)
         pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)
         x = tok_emb + pos_emb # (B,T,C)

@@ -63,12 +63,8 @@ def print_outputs(weights_dir):
             weights_path = os.path.join(weights_dir, file)
             model.load_state_dict(torch.load(weights_path))
             
-            # you might want to replace the following line with the actual method to generate output
-            # here I'm assuming the method's name is "generate_output" and it takes no arguments
             output = model.generate(context, max_new_tokens=500)[0].tolist()
 
-            
-            # decode output, assuming the method's name is "decode_output"
             decoded_output = decode(output)
             print(f"{file} output: {decoded_output}")
 

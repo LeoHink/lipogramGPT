@@ -71,8 +71,6 @@ class GenerationEnv3():
         self.episode_reward = 0
         self.data = data # encoded torch tensor
         self.device = device
-        # self.avg_word = avg_words/2
-        # self.avg_a_count = avg_a_count/2
         self.decoder = decoder
         self.diversity_threshold = diversity_threshold
         
@@ -120,84 +118,6 @@ class GenerationEnv3():
                     reward += 1
         return reward
 
-# character level u rewards
-    # def reward_function(self, context, action, is_done):
-    #     reward = 0
-    #     if is_done:
-    #         relevant_context = context[0][self.init_prompt_len:]
-    #         text = self.decoder(relevant_context.tolist())
-    #         u_count = sum(1 for char in text if char == 'U' or char == 'u')
-    #         unq_words_sent = set(text.split())
-    #         if u_count > 6:
-    #             reward -= 1
-    #         else:
-    #             pos_counts = get_pos_tags(text)
-    #             if pos_counts['Verbs'][0] > self.verb_threshold:
-    #                 reward += 1
-    #             if pos_counts['Nouns'][0] > self.noun_threshold:
-    #                 reward += 1
-    #             if pos_counts['Adjectives'][0] > self.adj_threshold:
-    #                 reward += 1
-    #             if pos_counts['Adverbs'][0] > self.adv_threshold:
-    #                 reward += 1
-    #             if len(unq_words_sent.intersection(self.word_set))/len(text.split()) > 0.6:
-    #                 reward += 1
-    #             # this reward here is an exploit 0/0 or 1/1 will give very high lexical diversity
-    #             if len(unq_words_sent)/len(text.split()) > self.diversity_threshold:
-    #                 reward += 2
-    #     return reward
-    
-    # def reward_function(self, context, action, is_done):
-    #     reward = 0
-    #     if action.item() in self.activate_rewards:
-    #         relavant_context = context[0][self.init_prompt_len:]
-    #         last_sentence = get_last_sentence(relavant_context, self.activate_rewards)
-    #         last_sentence = self.decoder(last_sentence.tolist())
-    #         unq_words_sent = set(last_sentence.split())
-    #         if 'u' in last_sentence:
-    #             reward -= 1
-    #         elif len(last_sentence) < 80:
-    #             reward -=1
-    #         else:
-    #             pos_counts = get_pos_tags(last_sentence)
-    #             if pos_counts['Verbs'][0] > self.verb_threshold:
-    #                 reward += 1
-    #             if pos_counts['Nouns'][0] > self.noun_threshold:
-    #                 reward += 1
-    #             if pos_counts['Adjectives'][0] > self.adj_threshold:
-    #                 reward += 1
-    #             if pos_counts['Adverbs'][0] > self.adv_threshold:
-    #                 reward += 1
-    #             if len(unq_words_sent.intersection(self.word_set))/len(last_sentence.split()) > 0.6:
-    #                 reward += 1
-    #             if len(unq_words_sent)/len(last_sentence.split()) > self.diversity_threshold:
-    #                 reward += 2
-    #     return reward
-
-# # dr. Seuss Reward Function, reward based on number of words and discourages use of words with e. 
-#     def reward_function(self, context, action, is_done):
-#         # reward function based on entire words
-#         action_reward = 0
-#         if action == 1 or action == 0:
-#             current_text = self.decoder(context[0].tolist())
-#             words = current_text.split()
-#             if len(words) > 20:
-#                 lex_div = len(set(words))/len(words)
-#                 if lex_div > self.diversity_threshold:
-#                     action_reward += 1
-            
-#             last_word = words[-1]
-            
-#             # gives reward if it is a word and it has an a (limitting with the word set)
-#             if "e" in last_word:
-#                 action_reward -= 1
-#             # elif last_word (change this to if... only checks if its a word if it does not have an e)
-#             if last_word not in self.word_set:
-#                 action_reward -= 1
-#             # elif last_word in self.word_set:
-#             #     reward = 0
-
-#         return action_reward
 
     def step(self, context, action):
         done = False

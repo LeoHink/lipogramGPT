@@ -1,3 +1,8 @@
+# ---------------
+# Based on Karpathy (2023): https://github.com/karpathy/ng-video-lecture
+# ---------------
+
+
 import torch 
 from torch import nn 
 import matplotlib.pyplot as plt
@@ -96,7 +101,7 @@ def main():
     # print the number of parameters in the model
     print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
-    # create a PyTorch optimizer
+    # AdamW Optimizer
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     history = {'train_loss': [], 'val_loss': []}
     for iter in range(max_iters):
@@ -118,7 +123,7 @@ def main():
         loss.backward()
         optimizer.step()
 
-    # generate from the model
+    # generate from the model at end of training
     context = torch.zeros((1, 1), dtype=torch.long, device=device)
     print(decode(m.generate(context, max_new_tokens=2000)[0].tolist()))
     
