@@ -59,7 +59,7 @@ def print_outputs(weights_dir):
     current_date = datetime.datetime.now()
     date_string = current_date.strftime('%Y_%m_%d')
     for file in os.listdir(weights_dir):
-        if file.endswith(".pth"):  # assuming the weights are saved with .pth extension
+        if file.endswith(".pth"): 
             weights_path = os.path.join(weights_dir, file)
             model.load_state_dict(torch.load(weights_path))
             

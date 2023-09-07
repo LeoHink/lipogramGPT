@@ -14,8 +14,6 @@ import time
 from GenEnv import GenerationEnv3
 import ast
 
-#### THIS IS THE LAMBA LABS VERSION OF PPO ####
-
 ################## Data Imports ########################
 df = pd.read_csv('generated_data.csv')
 
@@ -99,7 +97,6 @@ def freeze_weights(model):
     for param in model.parameters():
         param.requires_grad = False
 
-    # Then unfreeze the parameters you are interested in
     for name, param in model.named_parameters():
         if 'blocks.3' in name or name in ['ln_f.weight', 'ln_f.bias', 'lm_head.weight', 'lm_head.bias']:
             param.requires_grad = True
@@ -107,7 +104,6 @@ def freeze_weights(model):
     return model
 
 #############################################################
-
 
 class Memory:
     def __init__(self):
@@ -176,52 +172,52 @@ class PPO2:
                 discounted_reward = reward + (self.gamma * discounted_reward)
                 rewards.insert(0, discounted_reward) # insert at front to regain original order
 
-            # Normalizing the rewards
+            # normalizing the rewards
             rewards = torch.tensor(rewards, dtype=torch.float32).to(device).unsqueeze(1)
             rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
 
-            # Convert list to tensor
+            # convert list to tensor
             old_states = torch.stack(memory.states).to(device).detach().squeeze(1)
             old_actions = torch.stack(memory.actions).to(device).detach().squeeze(1)
             old_logprobs = torch.stack(memory.logprobs).to(device).detach().squeeze(1)
 
             # Optimization step
             for _ in range(self.K_epochs):
-                # Get policy logits
+                # get policy logits
                 logits, _ = self.actor(old_states)
                 logits = logits[:, -1, :] # only care about the last logits
-                # Get probabilities from logits
+                # get probabilities from logits
                 probs = F.softmax(logits, dim=-1)
                 
-                # Get log probabilities
+                # get log probabilities
                 logprobs = F.log_softmax(logits, dim=-1)
                 
                 # Get the logprob of the taken action
                 logprobs = torch.gather(logprobs, 1, old_actions)
 
-                # Calculating the entropy
+                # calculating the entropy
                 dist_entropy = -(probs * logprobs).sum(-1).mean()
 
-                # Evaluating old values
+                # evaluating old values
                 state_values = self.critic(old_states)
 
-                # Calculating the policy loss
+                # calculating the policy loss
                 ratios = torch.exp(logprobs - old_logprobs.detach())
                 advantages = rewards - state_values.detach()
                 surr1 = ratios * advantages
                 surr2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
                 policy_loss = -torch.min(surr1, surr2) - 0.01 * dist_entropy
 
-                # Calculating the value loss
+                # calculating the value loss
                 value_loss = 0.5 * self.MseLoss(state_values, rewards)
 
 
-                # Taking a gradient step for policy network
+                # taking a gradient step for policy network
                 self.act_optimizer.zero_grad()
                 policy_loss.mean().backward() # get average policy loss across the batch dimension
                 self.act_optimizer.step()
 
-                # Taking a gradient step for value network
+                # taking a gradient step for value network
                 self.critic_optimizer.zero_grad()
                 value_loss.mean().backward()
                 self.critic_optimizer.step()
@@ -281,7 +277,7 @@ def main():
         if running_reward > (log_interval*solved_reward):
             print("########## Solved! ##########")
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
-            torch.save(ppo.actor.state_dict(), 'PPO_{}.pth'.format(name)) # i do like this here through. 
+            torch.save(ppo.actor.state_dict(), 'PPO_{}.pth'.format(name)) 
             time_to_finish = time.time() - sum(training_dict['time_history'])
 
             break
@@ -289,7 +285,7 @@ def main():
             time_to_finish = time.time() - sum(training_dict['time_history'])
             break
         # logging
-        if i_episode % log_interval == 0: # this I also like
+        if i_episode % log_interval == 0: 
             avg_length = avg_length/log_interval
             update_interval = time.time() - start_time
             training_dict['time_history'].append(update_interval)

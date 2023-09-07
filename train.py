@@ -78,12 +78,10 @@ def plot_learning_curve(history):
     # plot val_loss
     plt.plot(history['val_loss'], label='Validation loss')
 
-    # Add title and labels
     plt.title('Training and Validation Loss Over Time')
     plt.xlabel('Steps (x100)')
     plt.ylabel('Loss')
 
-    # Add a legend
     plt.legend()
 
     plt.show()

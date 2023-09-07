@@ -25,38 +25,16 @@ def get_pos_tags(text):
     }
     pos_tagged_tokens = nltk.pos_tag(word_tokenize(text))
 
-    sentence_pos_counts = defaultdict(list)
+    pos_counts = defaultdict(list)
 
-    # Count POS tags at the document and sentence levels
-    sentence_pos_counts_temp = Counter()
+    # Count POS tags
+    pos_counts_temp = Counter()
     for word, tag in  pos_tagged_tokens:
-        sentence_pos_counts_temp[tag] += 1
+        pos_counts_temp[tag] += 1
     for pos_category, pos_tags in pos_categories.items():
-        sentence_pos_counts[pos_category].append(sum(sentence_pos_counts_temp[tag] for tag in pos_tags))
+        pos_counts[pos_category].append(sum(pos_counts_temp[tag] for tag in pos_tags))
     
-    return sentence_pos_counts
-
-def get_last_sentence(tensor, values_set):
-    indices = (tensor == value for value in values_set)
-    indices = torch.any(torch.stack(list(indices)), dim=0)
-
-    try:
-        # get the second to last index if the last index is in the set
-        last_occurence_index = torch.where(indices)[-1][-2] if indices[-1] else torch.where(indices)[-1][-1]
-        return tensor[last_occurence_index+1:]
-    except IndexError:
-        # if no occurrence found, return the whole tensor
-        return tensor
-
-def count_male_chars(chunk, male_characs):
-    words = chunk.upper().split()
-    count = sum(word in male_characs for word in words)
-    return count
-
-def count_female_chars(chunk, female_characs):
-    words = chunk.upper().split()
-    count = sum(word in female_characs for word in words)
-    return count
+    return pos_counts
 
 def count_u(string):
     """Count the occurrences of 'u' in a string"""
