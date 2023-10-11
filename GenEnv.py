@@ -7,6 +7,7 @@ import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.corpus import stopwords
 from collections import defaultdict, Counter
+import re
 
 ###### Necissary NLTK Downlaods ########
 
@@ -27,7 +28,7 @@ def get_pos_tags(text):
 
     pos_counts = defaultdict(list)
 
-    # Count POS tags
+    # Count POS tags at the document and sentence levels
     pos_counts_temp = Counter()
     for word, tag in  pos_tagged_tokens:
         pos_counts_temp[tag] += 1
@@ -44,7 +45,7 @@ def count_u(string):
 ########## Environment Class ##########
  
 class GenerationEnv3():
-    def __init__(self, unique_words, data, female_set, male_set, decoder, diversity_threshold, max_new_tokens = 500, device = "cpu"):
+    def __init__(self, unique_words, data, decoder, diversity_threshold, max_new_tokens = 500, device = "cpu"):
         self.word_set = unique_words
         self.episode_reward = 0
         self.data = data # encoded torch tensor
@@ -54,45 +55,52 @@ class GenerationEnv3():
         
         self.init_prompt_len = 128
         self.max_new_tokens = max_new_tokens
-        self.activate_rewards = set([8, 2, 12])
-        self.verb_threshold = 2
-        self.noun_threshold = 3
-        self.adj_threshold = 1
-        self.adv_threshold = 1
-        self.female_set = female_set
-        self.male_set = male_set
+        self.verb_threshold = 15
+        self.noun_threshold = 27
+        self.adj_threshold = 6
+        self.adv_threshold = 5
+        self.u_threshold = 10
 
     def reset(self):
-        length = self.init_prompt_len #block size turn into hyperparameter in production (fixed because value network is trained on 128)
-        start_idx = torch.randint(len(self.data)-length, (1,)).item()
+        length = 128 #block size turn into hyperparameter in production (fixed because value network is trained on 128)
+        start_idx = random_index = torch.randint(len(self.data)-length, (1,)).item()
         end_idx = start_idx+length
         prompt = self.data[start_idx:end_idx]
         prompt = prompt[None, :].to(self.device)
+        self.init_prompt_len = prompt.shape[1]
         return prompt #prompt is the initial state
 
     def reward_function(self, context, action, is_done):
         reward = 0
         if is_done:
-            relevant_context = context[0][128:]
+            relevant_context = context[0][self.init_prompt_len:]
             text = self.decoder(relevant_context.tolist())
             u_count = count_u(text)
-            unq_words_sent = set(text.split())
-            if u_count > 10:
+            text_no_punkt = re.sub(r'[^\w\s]', '', text)
+            unq_words_set = set(text_no_punkt.split())
+            print(f'U Count: {u_count}\n')
+            if u_count > self.u_threshold:
                 reward -= 2
             else:
                 pos_counts = get_pos_tags(text)
-                if pos_counts['Verbs'][0] > self.verb_threshold:
+                if pos_counts['Verbs'][0] >= self.verb_threshold:
+                    print(f"Verbs: {pos_counts['Verbs'][0]}\n")
                     reward += 1
-                if pos_counts['Nouns'][0] > self.noun_threshold:
+                if pos_counts['Nouns'][0] >= self.noun_threshold:
+                    print(f"Nouns: {pos_counts['Nouns'][0]}\n")
                     reward += 1
-                if pos_counts['Adjectives'][0] > self.adj_threshold:
+                if pos_counts['Adjectives'][0] >= self.adj_threshold:
+                    print(f"Adj: {pos_counts['Adjectives'][0]}\n")
                     reward += 1
-                if pos_counts['Adverbs'][0] > self.adv_threshold:
+                if pos_counts['Adverbs'][0] >= self.adv_threshold:
+                    print(f"Adverbs: {pos_counts['Adverbs'][0]}\n")
                     reward += 1
-                if len(unq_words_sent.intersection(self.word_set))/len(text.split()) > 0.66:
+                if len(unq_words_set.intersection(self.word_set))/len(unq_words_set) >= 0.8:
+                    print(f'real word count: {len(unq_words_set.intersection(self.word_set))/len(unq_words_set)}\n')
                     reward += 1
                 # this reward here is an exploit 0/0 or 1/1 will give very high lexical diversity
-                if len(unq_words_sent)/len(text.split()) > self.diversity_threshold:
+                if len(unq_words_set)/len(text.split()) > self.diversity_threshold:
+                    print(f'Lexical Div: {len(unq_words_set)/len(text.split())}')
                     reward += 1
         return reward
 

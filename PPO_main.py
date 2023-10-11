@@ -15,15 +15,6 @@ from GenEnv import GenerationEnv3
 import ast
 
 ################## Data Imports ########################
-df = pd.read_csv('generated_data.csv')
-
-avg_words = df['word_count'].mean()
-avg_a_count = df['a_count'].mean()
-
-df['output'] = df['output'].apply(ast.literal_eval)
-
-df['output_length'] = df['output'].apply(lambda x: len(x))
-average_length = df['output_length'].mean()
 
 def load_set_from_file(filename):
     with open(filename, 'rb') as file:
@@ -33,10 +24,6 @@ def load_set_from_file(filename):
 unique_words = load_set_from_file('shakespeare_word_set.pkl')
 
 data = load_set_from_file('encoded_data_tensor.pkl')
-
-female_characs = load_set_from_file('female_characs_set.pkl')
-
-male_characs = load_set_from_file('male_characs_set.pkl')
 
 with open('input.txt', 'r', encoding='utf-8') as f:
     text = f.read()
@@ -54,13 +41,13 @@ decode = lambda l: ''.join([itos[i] for i in l])
 ################## Globl Variables ########################
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-env = GenerationEnv3(unique_words, data, avg_words, avg_a_count, decode, 0.5, device=device)
+env = GenerationEnv3(unique_words, data, decode, 0.65, device=device)
 
 ################### Hyperparameters #######################
 
 name = "RLHF"
 
-log_interval = 20           # print avg reward in the interval
+log_interval = 1           # print avg reward in the interval
 max_episodes = 1_000        # max training episodes
 max_timesteps = 500         # max timesteps in one episode
 
@@ -68,7 +55,7 @@ update_timestep = 2000      # update policy every n timesteps
 vocab_size = 65
 embed_dim = 256
 hidden_dim = 512
-solved_reward = 150        # stop training if avg_reward > solved_reward
+solved_reward = 6        # stop training if avg_reward > solved_reward
 block_size = 128
 
 lr = 0.0006 #I will reduce the learning rate
@@ -97,6 +84,7 @@ def freeze_weights(model):
     for param in model.parameters():
         param.requires_grad = False
 
+    # Then unfreeze the parameters you are interested in
     for name, param in model.named_parameters():
         if 'blocks.3' in name or name in ['ln_f.weight', 'ln_f.bias', 'lm_head.weight', 'lm_head.bias']:
             param.requires_grad = True
@@ -104,6 +92,7 @@ def freeze_weights(model):
     return model
 
 #############################################################
+
 
 class Memory:
     def __init__(self):
@@ -132,7 +121,7 @@ class PPO2:
 
 
         self.actor = LanguageModel().to(device) # our policy given by transformer
-        self.actor.load_state_dict(torch.load('shakespeare_base.pth', map_location=torch.device(device))) #loading pre-trained weights
+        self.actor.load_state_dict(torch.load('Best_PPO_RLHF_2023-08-01_Epoch_17.pth', map_location=torch.device(device))) #loading pre-trained weights
         self.actor = freeze_weights(self.actor) # freezing all but the last transformer block and outputs (softmax) layer
         
         self.critic = ValueNetwork(vocab_size, embed_dim, hidden_dim).to(device)
@@ -172,52 +161,52 @@ class PPO2:
                 discounted_reward = reward + (self.gamma * discounted_reward)
                 rewards.insert(0, discounted_reward) # insert at front to regain original order
 
-            # normalizing the rewards
+            # Normalizing the rewards
             rewards = torch.tensor(rewards, dtype=torch.float32).to(device).unsqueeze(1)
             rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-5)
 
-            # convert list to tensor
+            # Convert list to tensor
             old_states = torch.stack(memory.states).to(device).detach().squeeze(1)
             old_actions = torch.stack(memory.actions).to(device).detach().squeeze(1)
             old_logprobs = torch.stack(memory.logprobs).to(device).detach().squeeze(1)
 
             # Optimization step
             for _ in range(self.K_epochs):
-                # get policy logits
+                # Get policy logits
                 logits, _ = self.actor(old_states)
                 logits = logits[:, -1, :] # only care about the last logits
-                # get probabilities from logits
+                # Get probabilities from logits
                 probs = F.softmax(logits, dim=-1)
                 
-                # get log probabilities
+                # Get log probabilities
                 logprobs = F.log_softmax(logits, dim=-1)
                 
                 # Get the logprob of the taken action
                 logprobs = torch.gather(logprobs, 1, old_actions)
 
-                # calculating the entropy
+                # Calculating the entropy
                 dist_entropy = -(probs * logprobs).sum(-1).mean()
 
-                # evaluating old values
+                # Evaluating old values
                 state_values = self.critic(old_states)
 
-                # calculating the policy loss
+                # Calculating the policy loss
                 ratios = torch.exp(logprobs - old_logprobs.detach())
                 advantages = rewards - state_values.detach()
                 surr1 = ratios * advantages
                 surr2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
                 policy_loss = -torch.min(surr1, surr2) - 0.01 * dist_entropy
 
-                # calculating the value loss
+                # Calculating the value loss
                 value_loss = 0.5 * self.MseLoss(state_values, rewards)
 
 
-                # taking a gradient step for policy network
+                # Taking a gradient step for policy network
                 self.act_optimizer.zero_grad()
                 policy_loss.mean().backward() # get average policy loss across the batch dimension
                 self.act_optimizer.step()
 
-                # taking a gradient step for value network
+                # Taking a gradient step for value network
                 self.critic_optimizer.zero_grad()
                 value_loss.mean().backward()
                 self.critic_optimizer.step()
@@ -277,7 +266,7 @@ def main():
         if running_reward > (log_interval*solved_reward):
             print("########## Solved! ##########")
             print('Episode {} \t avg length: {} \t reward: {}'.format(i_episode, avg_length, running_reward))
-            torch.save(ppo.actor.state_dict(), 'PPO_{}.pth'.format(name)) 
+            torch.save(ppo.actor.state_dict(), 'PPO_{}.pth'.format(name)) # i do like this here through. 
             time_to_finish = time.time() - sum(training_dict['time_history'])
 
             break
@@ -285,7 +274,7 @@ def main():
             time_to_finish = time.time() - sum(training_dict['time_history'])
             break
         # logging
-        if i_episode % log_interval == 0: 
+        if i_episode % log_interval == 0: # this I also like
             avg_length = avg_length/log_interval
             update_interval = time.time() - start_time
             training_dict['time_history'].append(update_interval)
