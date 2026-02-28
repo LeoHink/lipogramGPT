@@ -1,5 +1,6 @@
 # lipogramGPT
-A simple implementation using Karpathy's (2023) nanoGPT and fine-tuning it using PPO.
+
+A text generator that writes lipograms (omits certain characters). A simple implementation using Karpathy's (2023) nanoGPT and fine-tuning to produce lipograms using PPO.
 
 
 # Data
